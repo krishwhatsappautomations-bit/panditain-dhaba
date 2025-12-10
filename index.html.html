@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Flame Forest — Menu</title>
+<style>
+  :root{--accent:#03c26f;--muted:#666;--card:#fff}
+  *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+  body{margin:0;background:#f4f6f8;color:#111}
+  .wrap{max-width:1100px;margin:0 auto;padding:12px}
+  header{display:flex;align-items:center;gap:12px;padding:6px 0;justify-content:space-between;flex-wrap:wrap}
+  h1{font-size:22px;margin:0}
+  .lead{color:var(--muted);font-size:13px;margin-top:4px}
+
+  /* CATEGORY + SEARCH */
+  .controlsRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .categories{display:flex;gap:8px;flex-wrap:wrap}
+  .catBtn{padding:8px 12px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer}
+  .catBtn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .searchBox{margin-left:auto;min-width:220px;flex:1;max-width:420px}
+  .searchBox input{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc}
+
+  /* MENU GRID */
+  #menuGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+  .card{background:var(--card);padding:12px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  .imgwrap{height:140px;border-radius:8px;overflow:hidden;background:#f0f0f0;margin-bottom:8px;display:flex;align-items:center;justify-content:center}
+  .imgwrap img{width:100%;height:100%;object-fit:cover;display:block}
+  .item-title{font-weight:700;margin:0 0 6px}
+  .price{color:var(--accent);font-weight:800}
+  .controlsCard{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
+  .qtyBox{display:flex;align-items:center;gap:8px}
+  .qtyBtn{background:#eee;border:0;padding:4px 10px;font-size:18px;font-weight:900;border-radius:6px;cursor:pointer}
+  .qtyNum{width:28px;text-align:center;font-weight:700}
+  .btn{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+
+  /* REVIEW MODAL */
+  #reviewModal{display:none;position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,.45);align-items:center;justify-content:center;z-index:9999}
+  .modalCard{width:92%;max-width:820px;background:#fff;border-radius:10px;padding:14px;max-height:88vh;overflow:auto}
+  .review-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee}
+  .small{font-size:13px;color:var(--muted)}
+
+  /* EXPIRY SCREEN */
+  #expiredScreen{display:none;padding:30px;text-align:center}
+  #expiredScreen .card{max-width:720px;margin:40px auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 6px 26px rgba(0,0,0,.08)}
+
+  /* BOTTOM BAR */
+  .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:#fff;padding:12px;padding-bottom:65px;border-top:1px solid #eee;box-shadow:0 -6px 18px rgba(0,0,0,.06);z-index:999}
+  .bar-inner{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .confirmBtn{background:var(--accent);color:#fff;padding:12px 18px;border-radius:8px;border:0;font-weight:700;cursor:pointer;width:260px}
+  @media(max-width:680px){
+    .bar-inner{flex-direction:column;align-items:stretch}.confirmBtn{width:100%}
+    header{justify-content:center}
+  }
+</style>
+</head>
+<body>
+
+<div id="expiredScreen" class="wrap hidden">
+  <div class="card">
+    <h2 style="margin-top:0;color:#d33">Subscription Expired</h2>
+    <p style="margin:8px 0;color:#333;font-weight:700">Your restaurant ordering system subscription has expired.</p>
+    <p class="small" style="margin:8px 0">To renew and get your system running again, please contact support:</p>
+    <p style="margin:8px 0;font-weight:800">📞 7020330205</p>
+    <p class="small" style="margin-top:12px;color:var(--muted)">After renewal we will update the expiry date and the system will be active again.</p>
+  </div>
+</div>
+
+<div id="mainArea" class="wrap">
+  <header>
+    <div>
+      <h1>🔥 Flame Forest</h1>
+      <div class="lead">Scan • Select • Review • Confirm — WhatsApp Final Order</div>
+    </div>
+    <div id="cartSummary" class="lead">0 items • ₹0</div>
+  </header>
+
+  <div class="controlsRow">
+    <div class="categories" id="categoryRow"></div>
+    <div class="searchBox">
+      <input id="searchInput" placeholder="Search items or price..." oninput="applyFilters()">
+    </div>
+  </div>
+
+  <div id="menuGrid"></div>
+
+  <!-- CUSTOMER DETAILS -->
+  <div style="margin-top:12px; margin-bottom:140px;" class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input id="name_input" placeholder="Your Name" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ccc">
+      <input id="table_input" placeholder="Table" style="flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;background:#f2f2f2" readonly>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn" onclick="openReview()">Review Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div id="reviewModal">
+  <div class="modalCard">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:800;font-size:18px">Review Your Order</div>
+        <div id="reviewCustomer" class="small" style="margin-top:4px"></div>
+      </div>
+      <button class="btn" onclick="closeReview()">Close</button>
+    </div>
+
+    <div id="reviewList" style="margin-top:12px"></div>
+
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="small">Total</div>
+        <div id="reviewTotal" style="font-weight:800;font-size:20px">₹0</div>
+      </div>
+      <button id="confirmBtn" class="confirmBtn" onclick="confirmFinalOrder()">CONFIRM FINAL ORDER</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div id="bottomBar" class="bottom-bar" style="display:none">
+  <div class="bar-inner">
+    <div>
+      <div class="small">Total</div>
+      <div id="bottomTotal" style="font-weight:800;font-size:20px">₹0</div>
+    </div>
+    <button class="confirmBtn" onclick="openReview()">Review Order</button>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const shopName = "Flame Forest";
+const phoneNumber = "917020330205";
+const IMG_BB_KEY = "956539c8c9e7053902668964f579be06";
+const PRINT_BASE = "https://krishwhatsappautomations-bit.github.io/mounvee-snacks-centre/print.html";
+const EXPIRY_DATE = new Date("2025-12-11T23:59:59");
+
+/* ===== MENU ITEMS (extracted from your photo) =====
+ Note: image placeholders used. Replace image:'' with real URLs when available.
+ If you find typos in names/prices, tell me and I'll correct.
+*/
+const items = [
+  /* SOUPS */
+  {id:"s1", name:"Manchow Soup", price:175, category:"Soups", image:""},
+  {id:"s2", name:"Tomato Soup", price:155, category:"Soups", image:""},
+  {id:"s3", name:"Hot & Sour Veg Soup", price:165, category:"Soups", image:""},
+  {id:"s4", name:"Sweet Corn Veg Soup", price:175, category:"Soups", image:""},
+
+  /* OUR SPECIAL SNACKS */
+  {id:"sn1", name:"Paneer 65", price:255, category:"Snacks", image:""},
+  {id:"sn2", name:"Aloo 65", price:220, category:"Snacks", image:""},
+  {id:"sn3", name:"Methi Corn Kabab", price:220, category:"Snacks", image:""},
+  {id:"sn4", name:"Crispy Veg", price:220, category:"Snacks", image:""},
+  {id:"sn5", name:"Fusion Paneer", price:320, category:"Snacks", image:""},
+  {id:"sn6", name:"Stick Paneer", price:355, category:"Snacks", image:""},
+
+  /* CHINESE */
+  {id:"c1", name:"Veg American Chopsey", price:225, category:"Chinese", image:""},
+  {id:"c2", name:"Veg Fried Rice", price:195, category:"Chinese", image:""},
+  {id:"c3", name:"Veg Noodles", price:205, category:"Chinese", image:""},
+  {id:"c4", name:"Veg Manchurian", price:205, category:"Chinese", image:""},
+
+  /* SALAD / PAPAD / RAITA */
+  {id:"sal1", name:"Green Salad", price:85, category:"Salad", image:""},
+  {id:"sal2", name:"Masala Papad", price:40, category:"Salad", image:""},
+  {id:"sal3", name:"Mixed Raita", price:100, category:"Salad", image:""},
+  {id:"sal4", name:"Boondi Raita", price:100, category:"Salad", image:""},
+  {id:"sal5", name:"Pineapple Raita", price:140, category:"Salad", image:""},
+  {id:"sal6", name:"Roasted Papad", price:18, category:"Salad", image:""},
+  {id:"sal7", name:"Fry Papad", price:25, category:"Salad", image:""},
+  {id:"sal8", name:"Curd", price:75, category:"Salad", image:""},
+  {id:"sal9", name:"Dahi Kachumber", price:100, category:"Salad", image:""},
+  {id:"sal10", name:"Kachumber", price:100, category:"Salad", image:""},
+
+  /* ROTI - NAAN - PARATHA */
+  {id:"r1", name:"Roti", price:25, category:"Roti-Naan-Paratha", image:""},
+  {id:"r2", name:"Butter Roti", price:30, category:"Roti-Naan-Paratha", image:""},
+  {id:"r3", name:"Plain Naan", price:45, category:"Roti-Naan-Paratha", image:""},
+  {id:"r4", name:"Butter Naan", price:60, category:"Roti-Naan-Paratha", image:""},
+  {id:"r5", name:"Plain Paratha", price:40, category:"Roti-Naan-Paratha", image:""},
+  {id:"r6", name:"Paneer Kulcha", price:160, category:"Roti-Naan-Paratha", image:""},
+  {id:"r7", name:"Stuff Kulcha", price:130, category:"Roti-Naan-Paratha", image:""},
+  {id:"r8", name:"Aloo-Paratha (with curd)", price:30, category:"Roti-Naan-Paratha", image:""},
+
+  /* STARTERS (middle column) - many items */
+  {id:"st1", name:"Chilli Baby Corn", price:235, category:"Starters", image:""},
+  {id:"st2", name:"Chilli Mushroom", price:235, category:"Starters", image:""},
+  {id:"st3", name:"Paneer Mushroom", price:265, category:"Starters", image:""},
+  {id:"st4", name:"Mushroom 65", price:235, category:"Starters", image:""},
+  {id:"st5", name:"Peanuts Fry / Masala", price:205, category:"Starters", image:""},
+  {id:"st6", name:"Crispy Paneer", price:265, category:"Starters", image:""},
+  {id:"st7", name:"Green Peas Fry / Masala", price:225, category:"Starters", image:""},
+  {id:"st8", name:"Mushroom Chilly", price:235, category:"Starters", image:""},
+  {id:"st9", name:"Paneer Pakoda", price:225, category:"Starters", image:""},
+  {id:"st10", name:"Paneer Tikka", price:285, category:"Starters", image:""},
+  {id:"st11", name:"Veg Pakoda", price:185, category:"Starters", image:""},
+  {id:"st12", name:"Onion Pakoda", price:185, category:"Starters", image:""},
+  {id:"st13", name:"Chana Chilly", price:225, category:"Starters", image:""},
+  {id:"st14", name:"Chilli Paneer", price:260, category:"Starters", image:""},
+  {id:"st15", name:"Crispy Corn", price:235, category:"Starters", image:""},
+  {id:"st16", name:"Chilli Corn", price:235, category:"Starters", image:""},
+  {id:"st17", name:"Chilly Corn", price:245, category:"Starters", image:""},
+
+  /* DAL */
+  {id:"d1", name:"Jain Dal", price:165, category:"Dal", image:""},
+  {id:"d2", name:"Dal Butter", price:165, category:"Dal", image:""},
+  {id:"d3", name:"Dal Fry", price:190, category:"Dal", image:""},
+  {id:"d4", name:"Dal Tadka", price:190, category:"Dal", image:""},
+  {id:"d5", name:"Dal Palak", price:190, category:"Dal", image:""},
+  {id:"d6", name:"Dal Saoji", price:190, category:"Dal", image:""},
+  {id:"d7", name:"Dal Makhni", price:210, category:"Dal", image:""},
+
+  /* COLD DRINKS */
+  {id:"cd1", name:"Fresh Lime Soda", price:35, category:"Cold Drinks", image:""},
+  {id:"cd2", name:"Fresh Lime Water", price:25, category:"Cold Drinks", image:""},
+  {id:"cd3", name:"Mineral Water", price:25, category:"Cold Drinks", image:""},
+  {id:"cd4", name:"Soft Drink", price:40, category:"Cold Drinks", image:""},
+  {id:"cd5", name:"Butter Milk", price:25, category:"Cold Drinks", image:""},
+  {id:"cd6", name:"Jeera Soda", price:35, category:"Cold Drinks", image:""},
+
+  /* RICE / BASMATI */
+  {id:"ri1", name:"Plain Rice", price:160, category:"Rice", image:""},
+  {id:"ri2", name:"Jeera Rice", price:180, category:"Rice", image:""},
+  {id:"ri3", name:"Green Peas Pulao", price:200, category:"Rice", image:""},
+  {id:"ri4", name:"Khirchdi (Special)", price:200, category:"Rice", image:""},
+  {id:"ri5", name:"Special Ruch Biryani", price:260, category:"Rice", image:""},
+  {id:"ri6", name:"Veg Pulao", price:190, category:"Rice", image:""},
+  {id:"ri7", name:"Kashmiri Pulav (Sweet)", price:230, category:"Rice", image:""},
+  {id:"ri8", name:"Veg Biryani", price:220, category:"Rice", image:""},
+  {id:"ri9", name:"Shahi Pulav (Sweet)", price:230, category:"Rice", image:""},
+  {id:"ri10", name:"Masala Rice", price:210, category:"Rice", image:""},
+
+  /* VEGETABLE (main right panel - many items; I've captured many common ones) */
+  {id:"v1", name:"Paneer Butter Masala", price:310, category:"Vegetable", image:""},
+  {id:"v2", name:"Paneer Kadai", price:310, category:"Vegetable", image:""},
+  {id:"v3", name:"Paneer Pasand", price:310, category:"Vegetable", image:""},
+  {id:"v4", name:"Paneer Mutter", price:310, category:"Vegetable", image:""},
+  {id:"v5", name:"Paneer Bhurjee", price:310, category:"Vegetable", image:""},
+  {id:"v6", name:"Methi Mutter Masala", price:310, category:"Vegetable", image:""},
+  {id:"v7", name:"Paneer Palak", price:310, category:"Vegetable", image:""},
+  {id:"v8", name:"Rani Palak", price:315, category:"Vegetable", image:""},
+  {id:"v9", name:"Mutter Palak", price:295, category:"Vegetable", image:""},
+  {id:"v10", name:"Aloo Palak", price:275, category:"Vegetable", image:""},
+  {id:"v11", name:"Mix Veg", price:275, category:"Vegetable", image:""},
+  {id:"v12", name:"Veg Jaipuri", price:305, category:"Vegetable", image:""},
+  {id:"v13", name:"Veg Kofta", price:285, category:"Vegetable", image:""},
+  {id:"v14", name:"Malai Kofta (Sweet)", price:305, category:"Vegetable", image:""},
+  {id:"v15", name:"Gobhi Masala", price:275, category:"Vegetable", image:""},
+  {id:"v16", name:"Kadi", price:205, category:"Vegetable", image:""},
+  {id:"v17", name:"Bhendi Masala", price:285, category:"Vegetable", image:""},
+  {id:"v18", name:"Paneer Nepolion", price:295, category:"Vegetable", image:""},
+  {id:"v19", name:"Aloo Chokha", price:255, category:"Vegetable", image:""},
+  {id:"v20", name:"Veg Garden", price:295, category:"Vegetable", image:""},
+  {id:"v21", name:"Shahi Paneer (Sweet)", price:315, category:"Vegetable", image:""},
+  {id:"v22", name:"Paneer Bhurji Curry", price:320, category:"Vegetable", image:""},
+  {id:"v23", name:"Paneer Patliya", price:320, category:"Vegetable", image:""},
+  {id:"v24", name:"Bhindi Achari", price:295, category:"Vegetable", image:""},
+  {id:"v25", name:"Bhindi Fry", price:295, category:"Vegetable", image:""},
+  {id:"v26", name:"Veg Kadhai", price:295, category:"Vegetable", image:""},
+  {id:"v27", name:"Paneer Taka-Tak", price:320, category:"Vegetable", image:""},
+  {id:"v28", name:"Corn Kofta", price:305, category:"Vegetable", image:""},
+  {id:"v29", name:"Paneer Sajoji", price:310, category:"Vegetable", image:""},
+  {id:"v30", name:"Saaji Baigan Masala", price:285, category:"Vegetable", image:""},
+  {id:"v31", name:"Palak Baby Corn", price:305, category:"Vegetable", image:""},
+  {id:"v32", name:"Corn Butter Masala", price:295, category:"Vegetable", image:""},
+  {id:"v33", name:"Mushroom Baby Corn", price:305, category:"Vegetable", image:""},
+  {id:"v34", name:"Baby Corn Capsicum Masala", price:315, category:"Vegetable", image:""},
+  {id:"v35", name:"Corn Saoli", price:305, category:"Vegetable", image:""},
+  {id:"v36", name:"Aloo Gobi", price:275, category:"Vegetable", image:""},
+  {id:"v37", name:"Gobi Mutter", price:275, category:"Vegetable", image:""},
+  {id:"v38", name:"Mushroom Mutter", price:295, category:"Vegetable", image:""},
+  {id:"v39", name:"Mushroom Masala", price:285, category:"Vegetable", image:""},
+  {id:"v40", name:"Veg Kolhapuri", price:305, category:"Vegetable", image:""},
+  {id:"v41", name:"Stuffed Capsicum", price:275, category:"Vegetable", image:""},
+  {id:"v42", name:"Stuffed Tomato", price:275, category:"Vegetable", image:""},
+  {id:"v43", name:"Dum Aloo", price:275, category:"Vegetable", image:""},
+  {id:"v44", name:"Dum Kashmiri (Sweet)", price:295, category:"Vegetable", image:""},
+  {id:"v45", name:"Navratan Korma (Sweet)", price:295, category:"Vegetable", image:""},
+  {id:"v46", name:"Baigun Bharta", price:295, category:"Vegetable", image:""},
+  {id:"v47", name:"Chana Masala", price:265, category:"Vegetable", image:""},
+  {id:"v48", name:"Kuch-Bhi Special", price:355, category:"Vegetable", image:""},
+
+  /* OUR SPECIALITIES / right bottom */
+  {id:"sp1", name:"Paneer Latchdear", price:320, category:"Specialities", image:""},
+  {id:"sp2", name:"Veg Sham Subare", price:305, category:"Specialities", image:""},
+  {id:"sp3", name:"Tava Veg Masala", price:305, category:"Specialities", image:""},
+  {id:"sp4", name:"Paneer Tikka Masala", price:340, category:"Specialities", image:""},
+  {id:"sp5", name:"Paneer Punjabi", price:310, category:"Specialities", image:""},
+  {id:"sp6", name:"Veg Hyderabadi", price:325, category:"Specialities", image:""},
+  {id:"sp7", name:"Sabjee Lajawab (Sweet)", price:305, category:"Specialities", image:""},
+  {id:"sp8", name:"Paneer Hydrabadi", price:325, category:"Specialities", image:""},
+  {id:"sp9", name:"Paneer Masala", price:310, category:"Specialities", image:""},
+  {id:"sp10", name:"Aloo Cascum Masala", price:305, category:"Specialities", image:""},
+  {id:"sp11", name:"Paneer Bagam Bahar", price:330, category:"Specialities", image:""},
+  {id:"sp12", name:"Jeera Aloo", price:285, category:"Specialities", image:""},
+  {id:"sp13", name:"Paneer Razala", price:310, category:"Specialities", image:""}
+];
+
+/* ===== STATE ===== */
+let cart = {};
+window.lastBillImage = null;
+let activeCategory = "All";
+let categories = [];
+
+/* ===== UTIL ===== */
+function $(id){ return document.getElementById(id); }
+
+/* ===== INIT: build categories from items ===== */
+function buildCategories(){
+  const set = new Set(["All"]);
+  items.forEach(it => set.add(it.category || "Uncategorized"));
+  categories = Array.from(set);
+  renderCategoryRow();
+}
+function renderCategoryRow(){
+  const row = $("categoryRow");
+  row.innerHTML = "";
+  categories.forEach(cat => {
+    const btn = document.createElement("button");
+    btn.className = "catBtn" + (cat === activeCategory ? " active" : "");
+    btn.innerText = cat;
+    btn.onclick = () => { activeCategory = cat; document.querySelectorAll(".catBtn").forEach(b=>b.classList.remove("active")); btn.classList.add("active"); applyFilters(); };
+    row.appendChild(btn);
+  });
+}
+
+/* ===== CHECK EXPIRY & AUTO-TABLE ON LOAD ===== */
+function handleInit(){
+  // auto fill table from URL param
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get("table");
+  if(t){
+    $("table_input").value = "Table " + t;
+  }
+
+  // expiry
+  const now = new Date();
+  if(now > EXPIRY_DATE){
+    $("mainArea").style.display = "none";
+    $("expiredScreen").style.display = "block";
+    $("bottomBar").style.display = "none";
+    $("reviewModal").style.display = "none";
+    return;
+  } else {
+    $("mainArea").style.display = "block";
+  }
+
+  buildCategories();
+  loadMenu(); // initial render
+}
+handleInit();
+
+/* ===== RENDER MENU (with filters) ===== */
+function loadMenu(filteredList){
+  if(new Date() > EXPIRY_DATE) return;
+  const list = filteredList || items;
+  let html = "";
+  list.forEach(it => {
+    html += `
+      <div class="card" data-cat="${it.category}">
+        <div class="imgwrap">${ it.image ? `<img src="${it.image}" alt="${it.name}">` : `<div style="padding:12px;color:#999;text-align:center">No Image</div>` }</div>
+        <div class="item-title">${it.name}</div>
+        <div class="small">${it.category}</div>
+        <div class="price">₹${it.price}</div>
+        <div class="controlsCard">
+          <div class="qtyBox">
+            <button class="qtyBtn" onclick="menuQty('${it.id}',-1)">−</button>
+            <span id="mqty_${it.id}" class="qtyNum">1</span>
+            <button class="qtyBtn" onclick="menuQty('${it.id}',1)">+</button>
+          </div>
+          <button class="btn" onclick="addToCart('${it.id}')">Add</button>
+        </div>
+      </div>
+    `;
+  });
+  $("menuGrid").innerHTML = html;
+}
+
+/* ===== MENU QTY ===== */
+function menuQty(id, delta){
+  const el = $("mqty_"+id);
+  let v = parseInt(el.innerText) || 1;
+  v += delta;
+  if(v < 1) v = 1;
+  el.innerText = v;
+}
+
+/* ===== FILTER / SEARCH ===== */
+function applyFilters(){
+  const q = $("searchInput").value.trim().toLowerCase();
+  const filtered = items.filter(it => {
+    // category filter
+    if(activeCategory !== "All" && it.category !== activeCategory) return false;
+    // search filter: name or price
+    if(!q) return true;
+    if(it.name.toLowerCase().includes(q)) return true;
+    if(String(it.price).includes(q)) return true;
+    return false;
+  });
+  loadMenu(filtered);
+}
+
+/* ===== CART ===== */
+function addToCart(id){
+  if(new Date() > EXPIRY_DATE){ alert("Subscription expired. Please contact support."); return; }
+  const qty = parseInt($("mqty_"+id).innerText) || 1;
+  cart[id] = (cart[id] || 0) + qty;
+  updateSummary();
+  alert("Added to cart");
+}
+
+function getCartItems(){
+  const arr = [];
+  for(const id in cart){
+    const it = items.find(x=>x.id===id);
+    if(!it) continue;
+    const qty = cart[id];
+    const lineTotal = qty * it.price;
+    arr.push({id, name: it.name, price: it.price, qty, lineTotal});
+  }
+  return arr;
+}
+
+function updateSummary(){
+  const cartItems = getCartItems();
+  let total = 0, count = 0;
+  cartItems.forEach(ci=>{ count += ci.qty; total += ci.lineTotal; });
+  $("cartSummary").innerText = `${count} items • ₹${total}`;
+  $("bottomTotal").innerText = "₹"+total;
+  $("bottomBar").style.display = count>0 ? "block" : "none";
+}
+
+/* ===== REVIEW ===== */
+function openReview(){
+  if(new Date() > EXPIRY_DATE){ alert("Subscription expired. Please contact support."); return; }
+  const name = $("name_input").value.trim();
+  const table = $("table_input").value.trim();
+  const c = getCartItems();
+  if(!name || !table){ alert("Please enter Name & Table/Delivery"); return; }
+  if(c.length === 0){ alert("Cart is empty"); return; }
+  $("reviewCustomer").innerText = `${name} • ${table}`;
+  renderReview();
+  $("reviewModal").style.display = "flex";
+}
+function closeReview(){ $("reviewModal").style.display = "none"; }
+
+function renderReview(){
+  const c = getCartItems();
+  if(c.length === 0){
+    $("reviewList").innerHTML = `<div class="small">Cart is empty.</div>`;
+    $("reviewTotal").innerText = "₹0";
+    updateSummary();
+    return;
+  }
+  let total = 0;
+  let html = "";
+  c.forEach(ci=>{
+    total += ci.lineTotal;
+    html += `
+      <div class="review-item">
+        <div>
+          <div style="font-weight:800">${ci.name}</div>
+          <div class="small">₹${ci.price} each</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:800">₹${ci.lineTotal}</div>
+          <div style="margin-top:6px;display:flex;gap:6px;justify-content:flex-end">
+            <button class="qtyBtn" onclick="changeQty('${ci.id}',-1)">−</button>
+            <span class="qtyNum">${ci.qty}</span>
+            <button class="qtyBtn" onclick="changeQty('${ci.id}',1)">+</button>
+          </div>
+          <button style="margin-top:6px;background:none;border:0;color:#d00;font-size:13px" onclick="removeItem('${ci.id}')">Remove</button>
+        </div>
+      </div>
+    `;
+  });
+  $("reviewList").innerHTML = html;
+  $("reviewTotal").innerText = "₹"+total;
+}
+
+function changeQty(id, delta){
+  cart[id] = (cart[id] || 0) + delta;
+  if(cart[id] <= 0) delete cart[id];
+  renderReview();
+  updateSummary();
+}
+function removeItem(id){ delete cart[id]; renderReview(); updateSummary(); }
+
+/* ===== BILL IMAGE GENERATION ===== */
+function generateBillImageDataURL(cartItems, name, table, orderId){
+  return new Promise(resolve=>{
+    let total = 0;
+    let text = `${shopName}\nOrder ID: #${orderId}\nCustomer: ${name}\nTable/Delivery: ${table}\n\nItems:\n`;
+    cartItems.forEach(ci=>{
+      text += `${ci.name} x${ci.qty} = ₹${ci.lineTotal}\n`;
+      total += ci.lineTotal;
+    });
+    text += `\nTOTAL: ₹${total}\n\nThank you!`;
+
+    const lines = text.split("\n");
+    const width = 900;
+    const lineHeight = 32;
+    const height = Math.max(400, (lines.length + 2) * lineHeight + 40);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width; canvas.height = height;
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "#000";
+    ctx.font = "28px Arial";
+    ctx.fillText(shopName, 20, 40);
+    ctx.font = "20px Arial";
+    ctx.fillText(`Order ID: #${orderId}`, 20, 78);
+
+    ctx.font = "18px Arial";
+    let y = 120;
+    lines.slice(2).forEach(line=>{
+      ctx.fillText(line, 20, y);
+      y += lineHeight;
+    });
+
+    resolve(canvas.toDataURL("image/png"));
+  });
+}
+
+/* ===== ImgBB UPLOAD ===== */
+async function uploadToImgBB(base64DataURL){
+  if(!IMG_BB_KEY) return "";
+  try{
+    const base64 = base64DataURL.split(",")[1];
+    const form = new FormData();
+    form.append("key", IMG_BB_KEY);
+    form.append("image", base64);
+    const resp = await fetch("https://api.imgbb.com/1/upload", { method:"POST", body: form });
+    const json = await resp.json();
+    if(json && json.success && json.data && json.data.url) return json.data.url;
+    return "";
+  }catch(e){
+    console.error("ImgBB upload error", e);
+    return "";
+  }
+}
+
+/* ===== PRINT (owner) helper ===== */
+function openPrintWindow(dataURL){
+  const win = window.open();
+  win.document.write(`<img src="${dataURL}" style="width:100%;">`);
+  win.document.close();
+}
+
+/* ===== CONFIRM FINAL ORDER ===== */
+async function confirmFinalOrder(){
+  if(new Date() > EXPIRY_DATE){ alert("Subscription expired. Please contact support."); return; }
+
+  const name = $("name_input").value.trim();
+  const table = $("table_input").value.trim();
+  const cartItems = getCartItems();
+  if(!name || !table){ alert("Please enter Name & Table/Delivery"); return; }
+  if(cartItems.length === 0){ alert("Cart is empty"); return; }
+
+  const orderId = Math.floor(10000 + Math.random()*90000);
+  const btn = $("confirmBtn");
+  const prevText = btn.innerText;
+  btn.innerText = "Processing..."; btn.disabled = true;
+
+  try{
+    const dataURL = await generateBillImageDataURL(cartItems, name, table, orderId);
+    window.lastBillImage = dataURL;
+    const imgURL = await uploadToImgBB(dataURL);
+
+    let total = 0;
+    const lines = cartItems.map(ci => { total += ci.lineTotal; return `${ci.name} x${ci.qty} - ₹${ci.lineTotal}`; }).join("\n");
+
+    let msg =
+`*${shopName}*
+Order ID: *#${orderId}*
+
+${lines}
+
+🧾 *Total: ₹${total}*
+
+👤 Customer: ${name}
+📍 Table/Delivery: ${table}
+
+🖨 Print Bill:
+${PRINT_BASE}?img=${encodeURIComponent(imgURL || dataURL)}
+
+Bill Image:
+${imgURL || "(Image not uploaded)"}`
+    ;
+
+    window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(msg)}`, "_blank");
+
+    cart = {}; updateSummary(); closeReview();
+    alert("Final order prepared — WhatsApp opened for owner.");
+  }catch(err){
+    console.error(err);
+    alert("Error processing order.");
+  }finally{
+    btn.innerText = prevText; btn.disabled = false;
+  }
+}
+
+/* ===== INIT UI STATES ===== */
+updateSummary();
+applyFilters(); // ensure initial filter render
+</script>
+</body>
+</html>
